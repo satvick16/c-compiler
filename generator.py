@@ -113,6 +113,7 @@ from tacky import *
 #     )
 
 def translate(program: TackyProgram):
+    # first pass
     instructions = []
 
     for i in program.function_definition.instructions:
@@ -137,23 +138,65 @@ def translate(program: TackyProgram):
             instructions.append(MovAssemblyInstruction(src, dst))
             
             if isinstance(i.unary_operator, TackyComplement):
-                instructions.append(UnaryAssemblyInstruction(Not()))
+                instructions.append(UnaryAssemblyInstruction(Not(), dst))
             elif isinstance(i.unary_operator, TackyNegate):
-                instructions.append(UnaryAssemblyInstruction(Neg()))
+                instructions.append(UnaryAssemblyInstruction(Neg(), dst))
+
+    # second pass: replacing pseudoregisters
+    identifier_to_offset = {}
+    offset = 0
+
+    for instr in instructions:
+        if isinstance(instr, MovAssemblyInstruction):
+            # this is actually problematic, since both src and dst cannot be stack operands
+            if isinstance(instr.src, Pseudo):
+                if instr.src.identifier in identifier_to_offset:
+                    instr.src = Stack(identifier_to_offset[instr.src.identifier])
+                else:
+                    offset -= 4
+                    instr.src = Stack(offset)
+                    identifier_to_offset[instr.src.identifier] = offset
+            if isinstance(instr.dst, Pseudo):
+                if instr.dst.identifier in identifier_to_offset:
+                    instr.dst = Stack(identifier_to_offset[instr.dst.identifier])
+                else:
+                    offset -= 4
+                    identifier_to_offset[instr.dst.identifier] = offset  
+        elif isinstance(instr, UnaryAssemblyInstruction):
+            if isinstance(instr.operand, Pseudo):
+                if instr.operand.identifier in identifier_to_offset:
+                    instr.operand = Stack(identifier_to_offset[instr.operand.identifier])
+                else:
+                    offset -= 4
+                    instr.operand = Stack(offset)
+                    identifier_to_offset[instr.operand.identifier] = offset
+
+    # third pass: allocate stack and fix moves
+    new_instructions = [AllocateStackAssemblyInstruction(-1 * offset)]
+
+    for instr in instructions:
+        if isinstance(instr, MovAssemblyInstruction) and isinstance(instr.src, Stack) and isinstance(instr.dst, Stack):
+            new_instructions.extend([
+                MovAssemblyInstruction(instr.src, Reg(R10())),
+                MovAssemblyInstruction(Reg(R10()), instr.dst)
+            ])
+        else:
+            new_instructions.append(instr)
 
     return AssemblyProgram(
         AssemblyFunctionDefinition(
-            program.function_definition.identifier.name_str, 
-            instructions
+            name=AssemblyIdentifier(program.function_definition.identifier.name_str), 
+            instructions=new_instructions
         )
     )
 
-# x = """
-# int main(void) {
-#     return 100;
-# }
-# """
+x = """int main(void) {
+    return ~12;
+}
+"""
 
-# t = tokenize(x)
-# p = parse_program(t)
-# a = translate(p)
+t = tokenize(x)
+p = parse_program(t)
+a = tacky_translate(p)
+b = translate(a)
+print("hello")

@@ -6,12 +6,12 @@ def convert_instr(instr: AssemblyInstruction):
 
         if isinstance(instr.src, Imm):
             output += f"${str(instr.src.value)}, "
-        elif isinstance(instr.src, Register):
+        elif isinstance(instr.src, Reg):
             output += f"%eax, "
 
         if isinstance(instr.dst, Imm):
             output += f"${str(instr.dst.value)}\n"
-        elif isinstance(instr.dst, Register):
+        elif isinstance(instr.dst, Reg):
             output += f"%eax\n"
 
         return output
@@ -37,12 +37,12 @@ def write_assembly(program: AssemblyProgram, filename: str):
     with open(filename, "w") as f:
         f.write(text)
 
-x = """int main(void) {
-    return 100;
-}
-"""
+# x = """int main(void) {
+#     return 100;
+# }
+# """
 
-t = tokenize(x)
-p = parse_program(t)
-a = translate(p)
-write_assembly(a, "test.s")
+# t = tokenize(x)
+# p = parse_program(t)
+# a = translate(p)
+# write_assembly(a, "test.s")

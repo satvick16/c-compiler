@@ -100,18 +100,20 @@ def emit_tacky(e: Exp, instructions: list):
         instructions.append(TackyUnary(tacky_op, src, dst))
         return dst
 
-def emit_tacky_return(r: ReturnStatement, instrs: List[TackyInstruction]):
-    return TackyReturn(emit_tacky(r.return_value, instrs))
+def emit_tacky_return(r: ReturnStatement, instructions: List[TackyInstruction]):
+    instructions.append(TackyReturn(emit_tacky(r.return_value, instructions)))
 
 def tacky_translate(p: Program):
-    instrs = []    
+    instrs = []
+    emit_tacky_return(
+        p.function_definition.body, 
+        instrs
+    )
+
     return TackyProgram(
         TackyFunctionDefinition(
-            p.function_definition.name.name_str, 
-            emit_tacky_return(
-                p.function_definition.body, 
-                instrs
-            )
+            identifier=TackyIdentifier(p.function_definition.name.name_str), 
+            instructions=instrs
         )
     )
 
@@ -124,3 +126,14 @@ def tacky_translate(p: Program):
 # p = parse_program(t)
 # a = tacky_translate(p)
 # print("hello")
+############################
+# x = Program(FunctionDefinition(Identifier("main"), ReturnStatement(Unary(Negate,
+#  Unary(Complement,
+#  Unary(Negate, Constant(8)))))))
+# y = tacky_translate(x)
+
+# for i in y.function_definition.instructions:
+#     if isinstance(i, TackyUnary):
+#         print(i.src, i.dst)
+#     else:
+#         print(i)

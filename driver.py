@@ -75,7 +75,7 @@ if option == "--tacky":
 # Generation
 try:
     print("Code generation completed (stub)")
-    assembly_program = generator.translate(program)
+    assembly_program = generator.translate(tacky_program)
 except Exception:
     sys.exit(1)
 
