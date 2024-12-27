@@ -96,22 +96,6 @@ Constant(int)                   Imm(int)
 
 from tacky import *
 
-# def translate(program: Program):
-#     return AssemblyProgram(
-#         AssemblyFunctionDefinition(
-#             AssemblyIdentifier(
-#                 program.function_definition.name.name_str
-#             ), 
-#             [
-#                 MovAssemblyInstruction(
-#                     Imm(program.function_definition.body.return_value.value),
-#                     Register()
-#                 ), 
-#                 RetAssemblyInstruction()
-#             ]
-#         )
-#     )
-
 def translate(program: TackyProgram):
     # first pass
     instructions = []
@@ -161,7 +145,8 @@ def translate(program: TackyProgram):
                     instr.dst = Stack(identifier_to_offset[instr.dst.identifier])
                 else:
                     offset -= 4
-                    identifier_to_offset[instr.dst.identifier] = offset  
+                    identifier_to_offset[instr.dst.identifier] = offset
+                    instr.dst = Stack(offset)
         elif isinstance(instr, UnaryAssemblyInstruction):
             if isinstance(instr.operand, Pseudo):
                 if instr.operand.identifier in identifier_to_offset:
@@ -190,13 +175,13 @@ def translate(program: TackyProgram):
         )
     )
 
-x = """int main(void) {
-    return ~12;
-}
-"""
+# x = """int main(void) {
+#     return ~12;
+# }
+# """
 
-t = tokenize(x)
-p = parse_program(t)
-a = tacky_translate(p)
-b = translate(a)
-print("hello")
+# t = tokenize(x)
+# p = parse_program(t)
+# a = tacky_translate(p)
+# b = translate(a)
+# print("hello")
